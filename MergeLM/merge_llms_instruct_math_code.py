@@ -13,14 +13,14 @@ from utils.load_config import cache_dir
 
 
 task_model_mapping_dict = {
-    "instruct": "WizardLM-13B-V1.2",
-    "math": "WizardMath-13B-V1.0",
-    "code": "llama-2-13b-code-alpaca"
+    "instruct": "WizardLMTeam/WizardLM-13B-V1.2",
+    "math": "vanillaOVO/WizardMath-13B-V1.0",
+    "code": "layoric/llama-2-13b-code-alpaca"
 }
 finetuned_model_backbone_mapping_dict = {
-    "WizardLM-13B-V1.2": "Llama-2-13b-hf",
-    "WizardMath-13B-V1.0": "Llama-2-13b-hf",
-    "llama-2-13b-code-alpaca": "Llama-2-13b-hf"
+    "WizardLMTeam/WizardLM-13B-V1.2": "NousResearch/Llama-2-13b-hf",
+    "vanillaOVO/WizardMath-13B-V1.0": "NousResearch/Llama-2-13b-hf",
+    "layoric/llama-2-13b-code-alpaca": "NousResearch/Llama-2-13b-hf"
 }
 
 
@@ -41,10 +41,10 @@ def get_merge_performance(args: argparse.Namespace, finetuned_model_names: list,
     logger.info(f"configuration is {args}")
 
     try:
-        pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, args.pretrained_model_name), device_map="cpu")
-        pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, args.pretrained_model_name))
+        pretrained_model = AutoModelForCausalLM.from_pretrained(args.pretrained_model_name, device_map="auto")
+        pretrained_tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model_name)
     except:
-        pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=args.pretrained_model_name, cache_dir=cache_dir, device_map="cpu")
+        pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=args.pretrained_model_name, cache_dir=cache_dir, device_map="auto")
         pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=args.pretrained_model_name, cache_dir=cache_dir)
 
     # set the pad_token of pretrained and finetuned tokenizer
@@ -117,46 +117,46 @@ def get_merge_performance(args: argparse.Namespace, finetuned_model_names: list,
     logger.info(f"models are saved")
     del merged_model, tokenizers
 
-    if save_instruct_model_path is not None:
-        logger.info(f"evaluating merged model on instruct task...")
-        llm = create_llm(finetuned_model_name=save_instruct_model_path, pretrained_model_name=args.pretrained_model_name,
-                         args=args, logger=logger, tensor_parallel_size=args.tensor_parallel_size,
-                         just_inference=True, save_model_path=None)
-        save_gen_results_folder = f"./save_gen_instruct_responses_results/{'_'.join(merge_task_names)}/alpaca_eval/{args.save_model_name}"
-        test_alpaca_eval(llm=llm, finetuned_model_name=save_instruct_model_path,
-                         args=args, logger=logger, start_index=args.start_index, end_index=args.end_index,
-                         save_model_path=None, save_gen_results_folder=save_gen_results_folder)
+    # if save_instruct_model_path is not None:
+    #     logger.info(f"evaluating merged model on instruct task...")
+    #     llm = create_llm(finetuned_model_name=save_instruct_model_path, pretrained_model_name=args.pretrained_model_name,
+    #                      args=args, logger=logger, tensor_parallel_size=args.tensor_parallel_size,
+    #                      just_inference=True, save_model_path=None)
+    #     save_gen_results_folder = f"./save_gen_instruct_responses_results/{'_'.join(merge_task_names)}/alpaca_eval/{args.save_model_name}"
+    #     test_alpaca_eval(llm=llm, finetuned_model_name=save_instruct_model_path,
+    #                      args=args, logger=logger, start_index=args.start_index, end_index=args.end_index,
+    #                      save_model_path=None, save_gen_results_folder=save_gen_results_folder)
 
-    if save_math_model_path is not None:
-        logger.info(f"evaluating merged model on math task...")
-        llm = create_llm(finetuned_model_name=save_math_model_path, pretrained_model_name=args.pretrained_model_name,
-                         args=args, logger=logger, tensor_parallel_size=args.tensor_parallel_size,
-                         just_inference=True, save_model_path=None)
-        test_data_path = "math_code_data/gsm8k_test.jsonl"
-        test_gsm8k(llm=llm, test_data_path=test_data_path, args=args, logger=logger,
-                   start_index=args.start_index, end_index=args.end_index, save_model_path=None)
-        test_data_path = "math_code_data/MATH_test.jsonl"
-        test_hendrycks_math(llm=llm, test_data_path=test_data_path, args=args, logger=logger,
-                            start_index=args.start_index, end_index=args.end_index, save_model_path=None)
+    # if save_math_model_path is not None:
+    #     logger.info(f"evaluating merged model on math task...")
+    #     llm = create_llm(finetuned_model_name=save_math_model_path, pretrained_model_name=args.pretrained_model_name,
+    #                      args=args, logger=logger, tensor_parallel_size=args.tensor_parallel_size,
+    #                      just_inference=True, save_model_path=None)
+    #     test_data_path = "math_code_data/gsm8k_test.jsonl"
+    #     test_gsm8k(llm=llm, test_data_path=test_data_path, args=args, logger=logger,
+    #                start_index=args.start_index, end_index=args.end_index, save_model_path=None)
+    #     test_data_path = "math_code_data/MATH_test.jsonl"
+    #     test_hendrycks_math(llm=llm, test_data_path=test_data_path, args=args, logger=logger,
+    #                         start_index=args.start_index, end_index=args.end_index, save_model_path=None)
 
-    if save_code_model_path is not None:
-        logger.info(f"evaluating merged model on code task...")
-        llm = create_llm(finetuned_model_name=save_code_model_path, pretrained_model_name=args.pretrained_model_name,
-                         args=args, logger=logger, tensor_parallel_size=args.tensor_parallel_size,
-                         just_inference=True, save_model_path=None)
-        save_gen_results_folder = f"./save_gen_codes_results/{'_'.join(merge_task_names)}/human_eval/{args.save_model_name}"
-        test_human_eval(llm=llm, args=args, logger=logger, start_index=args.start_index, end_index=args.end_index,
-                        save_model_path=None, save_gen_results_folder=save_gen_results_folder)
-        save_gen_results_folder = f"./save_gen_codes_results/{'_'.join(merge_task_names)}/mbpp/{args.save_model_name}"
-        test_data_path = "math_code_data/mbpp.test.jsonl"
-        test_mbpp(llm=llm, test_data_path=test_data_path, args=args, logger=logger,
-                  start_index=args.start_index, end_index=args.end_index,
-                  save_model_path=None, save_gen_results_folder=save_gen_results_folder)
+    # if save_code_model_path is not None:
+    #     logger.info(f"evaluating merged model on code task...")
+    #     llm = create_llm(finetuned_model_name=save_code_model_path, pretrained_model_name=args.pretrained_model_name,
+    #                      args=args, logger=logger, tensor_parallel_size=args.tensor_parallel_size,
+    #                      just_inference=True, save_model_path=None)
+    #     save_gen_results_folder = f"./save_gen_codes_results/{'_'.join(merge_task_names)}/human_eval/{args.save_model_name}"
+    #     test_human_eval(llm=llm, args=args, logger=logger, start_index=args.start_index, end_index=args.end_index,
+    #                     save_model_path=None, save_gen_results_folder=save_gen_results_folder)
+    #     save_gen_results_folder = f"./save_gen_codes_results/{'_'.join(merge_task_names)}/mbpp/{args.save_model_name}"
+    #     test_data_path = "math_code_data/mbpp.test.jsonl"
+    #     test_mbpp(llm=llm, test_data_path=test_data_path, args=args, logger=logger,
+    #               start_index=args.start_index, end_index=args.end_index,
+    #               save_model_path=None, save_gen_results_folder=save_gen_results_folder)
 
-    for save_model_path in save_model_paths:
-        if save_model_path is not None:
-            shutil.rmtree(save_model_path, ignore_errors=True)
-    logger.info(f"inference of merging method {args.merging_method_name} is completed")
+    # for save_model_path in save_model_paths:
+    #     if save_model_path is not None:
+    #         shutil.rmtree(save_model_path, ignore_errors=True)
+    # logger.info(f"inference of merging method {args.merging_method_name} is completed")
 
 
 parser = argparse.ArgumentParser("Interface for merging LLMs")
@@ -164,14 +164,14 @@ parser.add_argument("--merge_instruct", action="store_true", default=False, help
 parser.add_argument("--merge_math", action="store_true", default=False, help="whether to merge math model")
 parser.add_argument("--merge_code", action="store_true", default=False, help="whether to merge code model")
 parser.add_argument("--merging_method_name", type=str, default="average_merging", help="name of the method to merge models",
-                    choices=["average_merging", "task_arithmetic", "mask_merging"])
+                    choices=["average_merging", "task_arithmetic", "mask_merging", "ties_merging"])
 parser.add_argument("--scaling_coefficient", type=float, default=1.0, help="scaling coefficient to merge the task vector")
 parser.add_argument("--weight_format", type=str, help="the format of weights to be masked", default="delta_weight", choices=["finetuned_weight", "delta_weight"])
 parser.add_argument("--weight_mask_rate", type=float, default=0.1, help="weight mask rate")
 parser.add_argument("--use_weight_rescale", action="store_true", default=False, help="whether to rescale the weight by 1 / (1 - weight_mask_rate)")
 parser.add_argument("--mask_strategy", type=str, help="mask strategy", default="random", choices=["random", "magnitude"])
 parser.add_argument("--mask_apply_method", type=str, default="average_merging", help="merging method that the mask strategy applies",
-                    choices=["average_merging", "task_arithmetic"])
+                    choices=["average_merging", "task_arithmetic", "ties_merging"])
 parser.add_argument('--start_index', type=int, default=0)
 parser.add_argument('--end_index', type=int, default=sys.maxsize)
 parser.add_argument("--tensor_parallel_size", type=int, default=1, help="numbers of gpus to use")
@@ -210,8 +210,9 @@ if __name__ == "__main__":
         assert args.merging_method_name == "mask_merging"
         if args.mask_apply_method == "average_merging":
             mask_apply_method_name = f"{args.mask_apply_method}"
-        else:
-            assert args.mask_apply_method == "task_arithmetic"
+        elif args.mask_apply_method == "task_arithmetic":
+            mask_apply_method_name = f"{args.mask_apply_method}_scaling_coefficient_{args.scaling_coefficient}"
+        elif args.mask_apply_method == "ties_merging":
             mask_apply_method_name = f"{args.mask_apply_method}_scaling_coefficient_{args.scaling_coefficient}"
         weight_mask_rates = [str(weight_mask_rate) for weight_mask_rate in args.weight_mask_rates]
         args.save_model_name = f"{args.merging_method_name}/{mask_apply_method_name}/mask_{'_'.join(weight_mask_rates)}_rescale_{args.use_weight_rescale}"
@@ -239,8 +240,8 @@ if __name__ == "__main__":
     finetuned_tokenizers = []
     merging_method = MergingMethod(merging_method_name=args.merging_method_name)
     for finetuned_model_name in finetuned_model_names:
-        finetuned_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, finetuned_model_name), device_map="cpu")
-        finetuned_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, finetuned_model_name),)
+        finetuned_model = AutoModelForCausalLM.from_pretrained(finetuned_model_name, device_map="auto")
+        finetuned_tokenizer = AutoTokenizer.from_pretrained(finetuned_model_name)
         models_to_merge.append(finetuned_model)
         finetuned_tokenizers.append(finetuned_tokenizer)
 

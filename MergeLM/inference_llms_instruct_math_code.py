@@ -24,24 +24,24 @@ from utils.load_config import cache_dir
 finetuned_model_backbone_mapping_dict = {
     "WizardLM-7B-V1.0": "llama-7b-hf",
     "WizardLM-7B-V1.0-recovered": "llama-7b-hf",
-    "WizardLM-13B-V1.2": "Llama-2-13b-hf",
+    "WizardLMTeam/WizardLM-13B-V1.2": "NousResearch/Llama-2-13b-hff",
     "WizardLM-70B-V1.0": "Llama-2-70b-hf",
     "WizardMath-7B-V1.0": "Llama-2-7b-hf",
-    "WizardMath-13B-V1.0": "Llama-2-13b-hf",
+    "vanillaOVO/WizardMath-13B-V1.0": "NousResearch/Llama-2-13b-hf",
     "WizardMath-70B-V1.0": "Llama-2-70b-hf",
     "WizardCoder-Python-7B-V1.0": "CodeLlama-7b-Python-hf",
-    "WizardCoder-Python-13B-V1.0": "CodeLlama-13b-Python-hf",
+    "WizardLMTeam/WizardCoder-Python-13B-V1.0": "codellama/CodeLlama-13b-hf",
     "WizardCoder-Python-34B-V1.0": "CodeLlama-34b-Python-hf",
-    "llama-2-13b-code-alpaca": "Llama-2-13b-hf"
+    "layoric/llama-2-13b-code-alpaca": "NousResearch/Llama-2-13b-hf"
 }
 
 
 def recover_from_pretrained_model(finetuned_model_name, pretrained_model_name, args, logger: logging.Logger, recovered_model_save_path: str, recover_manner: str):
     try:
-        pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, pretrained_model_name), device_map="cpu")
-        pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, pretrained_model_name))
-        finetuned_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, finetuned_model_name), device_map="cpu")
-        finetuned_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, finetuned_model_name))
+        pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name, device_map="auto")
+        pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
+        finetuned_model = AutoModelForCausalLM.from_pretrained(finetuned_model_name, device_map="auto")
+        finetuned_tokenizer = AutoTokenizer.from_pretrained(finetuned_model_name)
     except:
         pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=pretrained_model_name, cache_dir=cache_dir, device_map="cpu")
         pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=pretrained_model_name, cache_dir=cache_dir)
@@ -89,10 +89,10 @@ def create_llm(finetuned_model_name, pretrained_model_name, args, logger: loggin
         assert save_model_path is None
     else:
         try:
-            pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, pretrained_model_name), device_map="cpu")
-            pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, pretrained_model_name))
-            finetuned_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, finetuned_model_name), device_map="cpu")
-            finetuned_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=os.path.join(cache_dir, finetuned_model_name))
+            pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name, device_map="auto")
+            pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
+            finetuned_model = AutoModelForCausalLM.from_pretrained(finetuned_model_name, device_map="auto")
+            finetuned_tokenizer = AutoTokenizer.from_pretrained(finetuned_model_name)
         except:
             pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=pretrained_model_name, cache_dir=cache_dir, device_map="cpu")
             pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=pretrained_model_name, cache_dir=cache_dir)
@@ -206,7 +206,7 @@ def test_alpaca_eval(llm, finetuned_model_name, args, logger: logging.Logger, st
     torch.cuda.empty_cache()
 
 
-def test_gsm8k(llm, test_data_path, args, logger: logging.Logger, start_index=0, end_index=sys.maxsize, save_model_path=None):
+def test_gsm8k(llm, test_data_path, args, logger: logging.Logger, start_index=0, end_index=sys.maxsize, save_model_path=None, model_name=None):
     gsm8k_ins = []
     gsm8k_answers = []
     problem_prompt = get_math_task_prompt()
@@ -253,6 +253,9 @@ def test_gsm8k(llm, test_data_path, args, logger: logging.Logger, start_index=0,
     logger.info(f"data index starts from {start_index}, ends at {end_index}")
     logger.info(f"gsm8k test data length is {len(results)}, accuracy is {accuracy}")
     logger.info(args)
+    record = f"{model_name} gsm8k acc: {accuracy}\n"
+    with open("test_acc_record.txt", "a", encoding="utf-8") as file:
+        file.write(record)
     if save_model_path is not None:
         shutil.rmtree(save_model_path, ignore_errors=True)
 
@@ -260,7 +263,7 @@ def test_gsm8k(llm, test_data_path, args, logger: logging.Logger, start_index=0,
     torch.cuda.empty_cache()
 
 
-def test_hendrycks_math(llm, test_data_path, args, logger: logging.Logger, start_index=0, end_index=sys.maxsize, save_model_path=None):
+def test_hendrycks_math(llm, test_data_path, args, logger: logging.Logger, start_index=0, end_index=sys.maxsize, save_model_path=None, model_name=None):
     hendrycks_math_ins = []
     hendrycks_math_answers = []
     problem_prompt = get_math_task_prompt()
@@ -302,6 +305,9 @@ def test_hendrycks_math(llm, test_data_path, args, logger: logging.Logger, start
     logger.info(f"data index starts from {start_index}, ends at {end_index}")
     logger.info(f"MATH test data length is {len(results)}, accuracy is {accuracy}")
     logger.info(args)
+    record = f"{model_name} MATH acc: {accuracy}\n"
+    with open("test_acc_record.txt", "a", encoding="utf-8") as file:
+        file.write(record)
     if save_model_path is not None:
         shutil.rmtree(save_model_path, ignore_errors=True)
 
@@ -554,7 +560,8 @@ if __name__ == "__main__":
                         choices=["WizardLM-7B-V1.0", "WizardLM-13B-V1.2", "WizardLM-70B-V1.0",
                                  "WizardMath-7B-V1.0", "WizardMath-13B-V1.0", "WizardMath-70B-V1.0",
                                  "WizardCoder-Python-7B-V1.0", "WizardCoder-Python-13B-V1.0", "WizardCoder-Python-34B-V1.0",
-                                 "llama-2-13b-code-alpaca"])
+                                 "llama-2-13b-code-alpaca", "vanillaOVO/WizardMath-13B-V1.0", "WizardLMTeam/WizardCoder-Python-13B-V1.0",
+                                 "WizardLMTeam/WizardLM-13B-V1.2", "layoric/llama-2-13b-code-alpaca"])
     parser.add_argument("--dataset_name", type=str, default="alpaca_eval", help="dataset to be used", choices=["alpaca_eval", "gsm8k", "MATH", "human_eval", "mbpp"])
     parser.add_argument("--start_index", type=int, default=0)
     parser.add_argument("--end_index", type=int, default=sys.maxsize)
