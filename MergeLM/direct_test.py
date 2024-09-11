@@ -67,6 +67,6 @@ if __name__ == "__main__":
                   start_index=args.start_index, end_index=args.end_index,
                   save_model_path=None, save_gen_results_folder=save_gen_results_folder)
 
-    logger.info(f"inference of merging method {args.merging_method_name} is completed")
+    logger.info(f"inference of  {args.model_path} on {args.evaluate_task} is completed")
 
     sys.exit()

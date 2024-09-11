@@ -206,6 +206,9 @@ if __name__ == "__main__":
         args.save_model_name = f"{args.merging_method_name}"
     elif args.merging_method_name == "task_arithmetic":
         args.save_model_name = f"{args.merging_method_name}_scaling_coefficient_{args.scaling_coefficient}"
+    elif args.merging_method_name == "ties_merging":
+        args.save_model_name = f"{args.merging_method_name}_scaling_coefficient_{args.scaling_coefficient}"
+
     else:
         assert args.merging_method_name == "mask_merging"
         if args.mask_apply_method == "average_merging":

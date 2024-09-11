@@ -1,0 +1,17 @@
+
+models:
+  - model: WizardLMTeam/WizardLM-13B-V1.2
+    parameters:
+      weight: 1
+  - model: vanillaOVO/WizardMath-13B-V1.0
+    parameters:
+      weight: 1
+  - model: layoric/llama-2-13b-code-alpaca
+    parameters:
+      weight: 1
+merge_method: dare_linear
+base_model: NousResearch/Llama-2-13b-hf
+dtype: float16
+parameters:
+  density: 0.5
+  rescale: 1

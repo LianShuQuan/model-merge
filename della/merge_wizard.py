@@ -47,7 +47,7 @@ if "math" in args.models:
 
 if "code" in args.models:
     models += f"""
-  - model: {"WizardLMTeam/WizardCoder-Python-13B-V1.0"}
+  - model: {"layoric/llama-2-13b-code-alpaca"}
     parameters:
       weight: {weight}"""
     
@@ -137,6 +137,8 @@ if args.rescale == 0:
 
 uniq_id = uuid.uuid4()
 CONFIG_YML = f"./configs/{args.models}_{uniq_id}_{args.drop_rate}_{args.weights}.yml"
+if not os.path.exists("./configs"):
+    os.makedirs("./configs")
 # Save config as yaml file
 with open(CONFIG_YML, 'w', encoding="utf-8") as f:
     f.write(yaml_config)
