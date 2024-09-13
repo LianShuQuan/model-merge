@@ -15,6 +15,7 @@
 
 import logging
 from functools import lru_cache
+import re
 from typing import Any, List, Optional
 
 from mergekit import merge_methods
@@ -44,6 +45,7 @@ class MergePlanner:
     clone_tensors: bool
     trust_remote_code: bool
     out_model_config: Any
+    include_param_names_regex: Optional[list] = None,
     _writer_task: TensorWriterTask
     _method: MergeMethod
     _tasks: List[Task] = []
@@ -57,12 +59,14 @@ class MergePlanner:
         out_path: str,
         options: MergeOptions,
         out_model_config: Any,
+        include_param_names_regex: Optional[list] = None
     ):
         self.config = config
         self.arch_info = arch_info
         self.clone_tensors = options.clone_tensors
         self.trust_remote_code = options.trust_remote_code
         self.out_model_config = out_model_config
+        self.include_param_names_regex = include_param_names_regex
         self._method = merge_methods.get(config.merge_method)
         self._writer_task = TensorWriterTask(
             out_path=out_path,
@@ -131,6 +135,9 @@ class MergePlanner:
         models: List[ModelReference],
         cfg_reader: ConfigReader,
     ):
+        if self.include_param_names_regex is not None and not any([re.match(include_pattern, weight.name) for include_pattern in self.include_param_names_regex]):
+            logging.info(f"skip merging {weight.name}")
+            return
         tensor_merge_method = self._method
         if self._tokenizer_task and weight.is_embed:
             tensor_merge_method = TokenizerPermutationMerge(

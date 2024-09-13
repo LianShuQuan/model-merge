@@ -15,7 +15,7 @@
 
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 import tqdm
 import transformers
@@ -35,6 +35,7 @@ def run_merge(
     out_path: str,
     options: MergeOptions,
     config_source: Optional[str] = None,
+    include_param_names_regex: Optional[list] = None
 ):
     if options.random_seed is not None:
         transformers.trainer_utils.set_seed(options.random_seed)
@@ -72,6 +73,7 @@ def run_merge(
         out_path=out_path,
         options=options,
         out_model_config=cfg_out,
+        include_param_names_regex = include_param_names_regex
     ).plan()
 
     # warm up loader cache

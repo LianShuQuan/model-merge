@@ -25,7 +25,7 @@ from mergekit.merge_methods.slerp import SlerpMerge
 from mergekit.merge_methods.tokenizer_permute import TokenizerPermutationMerge
 
 
-def get(method: str) -> MergeMethod:
+def get(method: str, ) -> MergeMethod:
     if method == "linear":
         return LinearMerge()
     elif method == "slerp":

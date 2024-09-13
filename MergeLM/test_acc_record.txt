@@ -9,3 +9,4 @@ wizard_LM_math_code_dare_linear_0.1 gsm8k acc: 0.0
 wizard_LM_math_code_dare_linear_0.1 gsm8k acc: 0.0
 wizard_LM_math_code_dare_linear_0.1 gsm8k acc: 0.4495830174374526
 wizard_LM_math_code_dare_linear_0.5 gsm8k acc: 0.3934799090219864
+wizard_LM_math_dare_ties_0.2_merge_layers_10_11_12 gsm8k acc: 0.0

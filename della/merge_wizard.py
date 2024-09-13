@@ -17,6 +17,12 @@ parser.add_argument("--lambda_factor", default = 1, type=float, help="Scaling Fa
 parser.add_argument("--window_size", default = 0, type=float, help="Window Size for Probabilities. Set to 0 for TIES and DARE")
 parser.add_argument("--rescale", default = 1, type=int, choices = [1,0], help="Whether to rescale in step 1")
 parser.add_argument("--seed", default = 42, type=int, help="Random Seed")
+parser.add_argument("--merge_all_tensor", action="store_true", default=False, help="whther to merge all tensors")
+parser.add_argument('--layers_to_merge', nargs='+')
+parser.add_argument("--merge_embedding", action="store_true", default=False, help="whther to merge embedding")
+parser.add_argument("--merge_norm", action="store_true", default=False, help="whther to merge last norm layer")
+parser.add_argument("--merge_lm_head", action="store_true", default=False, help="whther to merge lm head")
+
 
 args = parser.parse_args()
 
@@ -153,6 +159,29 @@ torch.manual_seed(args.seed)
 with open(CONFIG_YML, "r", encoding="utf-8") as fp:
     merge_config = MergeConfiguration.model_validate(yaml.safe_load(fp))
 
+
+
+
+# get include_param_names_regex
+if not args.merge_all_tensor:
+    include_param_names_regex = []
+    if args.merge_norm:
+        include_param_names_regex.append(r"model.norm.weight")
+        OUTPUT_PATH += "_norm"
+    if args.merge_lm_head:
+        include_param_names_regex.append(r".*lm_head.*")
+        OUTPUT_PATH += "_lmhead"
+    if args.merge_embedding:
+        include_param_names_regex.append(r".*embed_tokens.*")
+        OUTPUT_PATH += "_embedding"
+    if args.layers_to_merge is not None:
+        OUTPUT_PATH += f"_merge_layers_{'_'.join(args.layers_to_merge)}"
+        for layer_id in args.layers_to_merge:
+            include_param_names_regex.append(r"model\.layers\." + str(layer_id) + r"\.")
+else:
+    include_param_names_regex = None
+
+
 run_merge(
     merge_config,
     out_path=OUTPUT_PATH,
@@ -163,6 +192,7 @@ run_merge(
         lazy_unpickle=LAZY_UNPICKLE,
         low_cpu_memory=LOW_CPU_MEMORY,
     ),
+    include_param_names_regex = include_param_names_regex
 )
 print("Merge Done!")
 
