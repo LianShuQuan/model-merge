@@ -1,7 +1,7 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from torch import nn
 
-model_path1 = "deepseek-ai/deepseek-llm-7b-base"
+model_path1 = "vanillaOVO/WizardMath-13B-V1.0"
 model1:nn.Module = AutoModelForCausalLM.from_pretrained(model_path1)
 
 tokenizer1 = AutoTokenizer.from_pretrained(model_path1)

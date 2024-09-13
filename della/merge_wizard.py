@@ -31,6 +31,10 @@ LORA_MERGE_CACHE = "/tmp"
 COPY_TOKENIZER = True
 LAZY_UNPICKLE = False
 LOW_CPU_MEMORY = False
+BASE_MODEL = "NousResearch/Llama-2-13b-hf"
+MATH_MODEL = "vanillaOVO/WizardMath-13B-V1.0"
+LM_MODEL = "WizardLMTeam/WizardLM-13B-V1.2"
+CODE_MODEL = "layoric/llama-2-13b-code-alpaca"
 
 save_model_base = "/data/lsq/save_merge_models"
 
@@ -41,19 +45,19 @@ if args.drop_rate is not None:
 
 if "LM" in args.models:
     models += f"""
-  - model: {"WizardLMTeam/WizardLM-13B-V1.2"}
+  - model: {LM_MODEL}
     parameters:
       weight: {weight}"""
 
 if "math" in args.models:
     models += f"""
-  - model: {"vanillaOVO/WizardMath-13B-V1.0"}
+  - model: {MATH_MODEL}
     parameters:
       weight: {weight}"""
 
 if "code" in args.models:
     models += f"""
-  - model: {"layoric/llama-2-13b-code-alpaca"}
+  - model: {CODE_MODEL}
     parameters:
       weight: {weight}"""
     
@@ -66,7 +70,7 @@ if args.merge_method == "della":
     yaml_config = f"""
 models:{models}
 merge_method: {args.merge_method}
-base_model: {"NousResearch/Llama-2-13b-hf"}
+base_model: {BASE_MODEL}
 dtype: float16
 parameters:
   density: {density}
@@ -91,7 +95,7 @@ if args.merge_method == "task_arithmetic":
     yaml_config = f"""
 models:{models}
 merge_method: {args.merge_method}
-base_model: {"NousResearch/Llama-2-13b-hf"}
+base_model: {BASE_MODEL}
 dtype: float16
 """
     OUTPUT_PATH = f"{save_model_base}/wizard_{args.models}_{args.merge_method}"
@@ -104,7 +108,7 @@ if args.merge_method == "ties":
     yaml_config = f"""
 models:{models}
 merge_method: {args.merge_method}
-base_model: {"NousResearch/Llama-2-13b-hf"}
+base_model: {BASE_MODEL}
 dtype: float16
 parameters:
   density: {density}
@@ -119,7 +123,7 @@ if args.merge_method == "dare_ties" or args.merge_method == "dare_linear":
     yaml_config = f"""
 models:{models}
 merge_method: {args.merge_method}
-base_model: {"NousResearch/Llama-2-13b-hf"}
+base_model: {BASE_MODEL}
 dtype: float16
 parameters:
   density: {density}
@@ -165,6 +169,10 @@ with open(CONFIG_YML, "r", encoding="utf-8") as fp:
 # get include_param_names_regex
 if not args.merge_all_tensor:
     include_param_names_regex = []
+    if args.layers_to_merge is not None:
+        OUTPUT_PATH += f"_merge_layers_{'_'.join(args.layers_to_merge)}"
+        for layer_id in args.layers_to_merge:
+            include_param_names_regex.append(r"model\.layers\." + str(layer_id) + r"\.")
     if args.merge_norm:
         include_param_names_regex.append(r"model.norm.weight")
         OUTPUT_PATH += "_norm"
@@ -174,10 +182,6 @@ if not args.merge_all_tensor:
     if args.merge_embedding:
         include_param_names_regex.append(r".*embed_tokens.*")
         OUTPUT_PATH += "_embedding"
-    if args.layers_to_merge is not None:
-        OUTPUT_PATH += f"_merge_layers_{'_'.join(args.layers_to_merge)}"
-        for layer_id in args.layers_to_merge:
-            include_param_names_regex.append(r"model\.layers\." + str(layer_id) + r"\.")
 else:
     include_param_names_regex = None
 
